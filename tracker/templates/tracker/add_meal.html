@@ -15,11 +15,22 @@
             <div class="mb-3">
               <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
               {{ field }}
+              {% if field.name == 'food_description' %}
+                <!-- AI estimate trigger shown after food field -->
+                <div id="ai-status" class="form-text text-muted mt-1" style="min-height:1.2em;"></div>
+              {% endif %}
               {% for error in field.errors %}
                 <div class="invalid-feedback d-block">{{ error }}</div>
               {% endfor %}
             </div>
           {% endfor %}
+
+          <!-- AI note shown below calories/protein -->
+          <div id="ai-note" class="alert alert-success py-2 px-3 small d-none">
+            <i class="bi bi-stars me-1"></i><span id="ai-note-text"></span>
+            <span class="text-muted"> &mdash; feel free to adjust the values above.</span>
+          </div>
+
           <div class="d-flex gap-2 mt-3">
             <button type="submit" class="btn btn-warning fw-semibold px-4">Save Meal</button>
             <a href="{% url 'tracker:dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
@@ -32,5 +43,61 @@
 
 <script>
   document.querySelectorAll('input, select, textarea').forEach(el => el.classList.add('form-control'));
+
+  const foodField   = document.getElementById('id_food_description');
+  const calField    = document.getElementById('id_estimated_calories');
+  const protField   = document.getElementById('id_protein_grams');
+  const statusEl    = document.getElementById('ai-status');
+  const noteBox     = document.getElementById('ai-note');
+  const noteText    = document.getElementById('ai-note-text');
+  const csrfToken   = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  let debounceTimer = null;
+
+  foodField.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    const food = foodField.value.trim();
+    if (food.length < 5) {
+      statusEl.textContent = '';
+      noteBox.classList.add('d-none');
+      return;
+    }
+    statusEl.innerHTML = '<span class="text-warning"><i class="bi bi-hourglass-split"></i> Estimating nutrition with AI...</span>';
+
+    // Wait 1.2s after user stops typing before calling API
+    debounceTimer = setTimeout(() => estimateNutrition(food), 1200);
+  });
+
+  async function estimateNutrition(food) {
+    try {
+      const res = await fetch('{% url "tracker:estimate_nutrition" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify({ food }),
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle"></i> ${data.error}</span>`;
+        return;
+      }
+
+      // Auto-fill only if fields are empty or were previously AI-filled
+      calField.value  = data.calories;
+      protField.value = data.protein;
+
+      statusEl.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill"></i> AI estimate filled in</span>';
+
+      if (data.note) {
+        noteText.textContent = data.note;
+        noteBox.classList.remove('d-none');
+      }
+    } catch (err) {
+      statusEl.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle"></i> Could not reach AI</span>';
+    }
+  }
 </script>
 {% endblock %}

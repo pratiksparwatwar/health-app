@@ -3,7 +3,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Sum, Avg
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.conf import settings
 from datetime import timedelta
+import json
+import openai
 
 from .models import MealLog, ExerciseLog, WeightLog, WaterLog
 from .forms import MealLogForm, ExerciseLogForm, WeightLogForm, WaterLogForm
@@ -99,6 +104,60 @@ def add_body(request):
                 return redirect('tracker:dashboard')
 
     return render(request, 'tracker/add_body.html', {'weight_form': weight_form, 'water_form': water_form})
+
+
+@login_required
+@require_POST
+def estimate_nutrition(request):
+    """Call DeepSeek to estimate calories and protein for a food description."""
+    try:
+        data = json.loads(request.body)
+        food = data.get('food', '').strip()
+    except (json.JSONDecodeError, KeyError):
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    if not food:
+        return JsonResponse({'error': 'No food description provided'}, status=400)
+
+    if not settings.DEEPSEEK_API_KEY:
+        return JsonResponse({'error': 'AI not configured'}, status=503)
+
+    try:
+        client = openai.OpenAI(
+            api_key=settings.DEEPSEEK_API_KEY,
+            base_url=settings.DEEPSEEK_BASE_URL,
+        )
+        response = client.chat.completions.create(
+            model=settings.DEEPSEEK_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a nutrition expert. When given a food description, "
+                        "respond with ONLY a JSON object in this exact format: "
+                        '{"calories": <integer>, "protein": <float>, "note": "<brief note>"} '
+                        "Estimate for a typical single serving. No extra text."
+                    ),
+                },
+                {"role": "user", "content": f"Estimate nutrition for: {food}"},
+            ],
+            max_tokens=100,
+            temperature=0.2,
+        )
+        raw = response.choices[0].message.content.strip()
+        # Strip markdown code fences if DeepSeek wraps in ```json ... ```
+        if raw.startswith('```'):
+            raw = raw.split('```')[1]
+            if raw.startswith('json'):
+                raw = raw[4:]
+        result = json.loads(raw.strip())
+        return JsonResponse({
+            'calories': int(result.get('calories', 0)),
+            'protein': round(float(result.get('protein', 0)), 1),
+            'note': result.get('note', ''),
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required
