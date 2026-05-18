@@ -15,11 +15,21 @@
             <div class="mb-3">
               <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
               {{ field }}
+              {% if field.name == 'intensity' %}
+                <!-- AI estimate trigger shown after intensity field -->
+                <div id="ai-status" class="form-text mt-1" style="min-height:1.2em;"></div>
+              {% endif %}
               {% for error in field.errors %}
                 <div class="invalid-feedback d-block">{{ error }}</div>
               {% endfor %}
             </div>
           {% endfor %}
+
+          <div id="ai-note" class="alert alert-primary py-2 px-3 small d-none">
+            <i class="bi bi-stars me-1"></i><span id="ai-note-text"></span>
+            <span class="text-muted"> &mdash; you can adjust the value above.</span>
+          </div>
+
           <div class="d-flex gap-2 mt-3">
             <button type="submit" class="btn btn-primary fw-semibold px-4">Save Exercise</button>
             <a href="{% url 'tracker:dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
@@ -32,5 +42,57 @@
 
 <script>
   document.querySelectorAll('input, select, textarea').forEach(el => el.classList.add('form-control'));
+
+  const exerciseField  = document.getElementById('id_exercise_type');
+  const durationField  = document.getElementById('id_duration_minutes');
+  const intensityField = document.getElementById('id_intensity');
+  const caloriesField  = document.getElementById('id_calories_burned');
+  const statusEl       = document.getElementById('ai-status');
+  const noteBox        = document.getElementById('ai-note');
+  const noteText       = document.getElementById('ai-note-text');
+  const csrfToken      = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  let debounceTimer = null;
+
+  function scheduleEstimate() {
+    clearTimeout(debounceTimer);
+    const exercise = exerciseField.value.trim();
+    const duration = durationField.value.trim();
+    if (!exercise || !duration) return;
+
+    statusEl.innerHTML = '<span class="text-primary"><i class="bi bi-hourglass-split"></i> Estimating calories burned...</span>';
+    debounceTimer = setTimeout(() => estimateCalories(exercise, duration), 1200);
+  }
+
+  exerciseField.addEventListener('input', scheduleEstimate);
+  durationField.addEventListener('input', scheduleEstimate);
+  intensityField.addEventListener('change', scheduleEstimate);
+
+  async function estimateCalories(exercise, duration) {
+    const intensity = intensityField.value;
+    try {
+      const res = await fetch('{% url "tracker:estimate_exercise_calories" %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body: JSON.stringify({ exercise, duration, intensity }),
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle"></i> ${data.error}</span>`;
+        return;
+      }
+
+      caloriesField.value = data.calories_burned;
+      statusEl.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill"></i> AI estimate filled in</span>';
+
+      if (data.note) {
+        noteText.textContent = data.note;
+        noteBox.classList.remove('d-none');
+      }
+    } catch (err) {
+      statusEl.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle"></i> Could not reach AI</span>';
+    }
+  }
 </script>
 {% endblock %}

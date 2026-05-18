@@ -8,14 +8,58 @@
     <small class="text-muted">{{ today|date:"l, F j, Y" }}</small>
   </div>
   <div class="d-flex gap-2">
-    <a href="{% url 'tracker:add_meal' %}" class="btn btn-outline-success btn-sm"><i class="bi bi-plus"></i> Meal</a>
+    <a href="{% url 'tracker:add_meal' %}"     class="btn btn-outline-warning btn-sm"><i class="bi bi-plus"></i> Meal</a>
     <a href="{% url 'tracker:add_exercise' %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-plus"></i> Exercise</a>
-    <a href="{% url 'tracker:add_body' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-plus"></i> Weight/Water</a>
+    <a href="{% url 'tracker:add_body' %}"     class="btn btn-outline-secondary btn-sm"><i class="bi bi-plus"></i> Weight/Water</a>
   </div>
 </div>
 
-<!-- Today's Stats -->
-<h5 class="text-muted fw-semibold mb-3">TODAY</h5>
+<!-- ── Today's Goal Progress ──────────────────────────────────────────── -->
+<h5 class="text-muted fw-semibold mb-3">TODAY'S GOALS</h5>
+<div class="row g-3 mb-4">
+
+  <!-- Calories goal -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="fw-semibold"><i class="bi bi-fire text-warning me-1"></i>Calories</span>
+          <span class="small text-muted">{{ todays_calories }} / {{ calorie_target }} kcal</span>
+        </div>
+        <div class="progress mb-2" style="height:10px;">
+          <div class="progress-bar {% if calorie_pct > 100 %}bg-danger{% elif calorie_pct >= 85 %}bg-warning{% else %}bg-success{% endif %}"
+               style="width:{{ calorie_pct }}%"></div>
+        </div>
+        {% if todays_calories_burned %}
+          <div class="small text-muted">
+            <i class="bi bi-lightning-charge text-primary"></i>
+            Burned {{ todays_calories_burned }} kcal &rarr;
+            <strong>Net {{ net_calories }} kcal</strong>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Water goal -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="fw-semibold"><i class="bi bi-droplet-half text-info me-1"></i>Water</span>
+          <span class="small text-muted">{{ todays_water_ml }} / {{ water_goal_ml }} ml</span>
+        </div>
+        <div class="progress mb-2" style="height:10px;">
+          <div class="progress-bar bg-info" style="width:{{ water_pct }}%"></div>
+        </div>
+        <div class="small text-muted">Goal: {{ water_goal_liters }} L per day</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Today's Stats ─────────────────────────────────────────────────── -->
+<h5 class="text-muted fw-semibold mb-3">TODAY AT A GLANCE</h5>
 <div class="row g-3 mb-4">
   <div class="col-6 col-md-3">
     <div class="card border-0 shadow-sm text-center h-100">
@@ -29,18 +73,18 @@
   <div class="col-6 col-md-3">
     <div class="card border-0 shadow-sm text-center h-100">
       <div class="card-body">
-        <i class="bi bi-stopwatch fs-2 text-primary"></i>
-        <h3 class="fw-bold mb-0">{{ todays_exercise_mins }}</h3>
-        <small class="text-muted">min exercised</small>
+        <i class="bi bi-lightning-charge fs-2 text-primary"></i>
+        <h3 class="fw-bold mb-0">{{ todays_calories_burned }}</h3>
+        <small class="text-muted">kcal burned</small>
       </div>
     </div>
   </div>
   <div class="col-6 col-md-3">
     <div class="card border-0 shadow-sm text-center h-100">
       <div class="card-body">
-        <i class="bi bi-droplet-half fs-2 text-info"></i>
-        <h3 class="fw-bold mb-0">{{ todays_water_ml }}</h3>
-        <small class="text-muted">ml water</small>
+        <i class="bi bi-stopwatch fs-2 text-success"></i>
+        <h3 class="fw-bold mb-0">{{ todays_exercise_mins }}</h3>
+        <small class="text-muted">min exercised</small>
       </div>
     </div>
   </div>
@@ -55,7 +99,17 @@
   </div>
 </div>
 
-<!-- Weekly Summary -->
+<!-- ── Weight Trend Chart ─────────────────────────────────────────────── -->
+{% if has_weight_data %}
+<h5 class="text-muted fw-semibold mb-3">WEIGHT TREND (LAST 30 DAYS)</h5>
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <canvas id="weightChart" height="90"></canvas>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Weekly Summary ─────────────────────────────────────────────────── -->
 <h5 class="text-muted fw-semibold mb-3">LAST 7 DAYS</h5>
 <div class="row g-3 mb-4">
   <div class="col-md-4">
@@ -99,7 +153,7 @@
   </div>
 </div>
 
-<!-- Today's Meals -->
+<!-- ── Today's Meals + Exercise ───────────────────────────────────────── -->
 <div class="row g-4">
   <div class="col-lg-6">
     <div class="card border-0 shadow-sm h-100">
@@ -114,7 +168,7 @@
                 <div class="d-flex justify-content-between">
                   <div>
                     <span class="badge bg-success-subtle text-success me-1">{{ meal.get_meal_type_display }}</span>
-                    {{ meal.food_description|truncatechars:60 }}
+                    {{ meal.food_description|truncatechars:55 }}
                   </div>
                   <span class="text-muted small">{{ meal.estimated_calories|default:"?" }} kcal</span>
                 </div>
@@ -128,7 +182,6 @@
     </div>
   </div>
 
-  <!-- Today's Exercise -->
   <div class="col-lg-6">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-header bg-white fw-bold border-0 pb-0">
@@ -141,7 +194,10 @@
               <li class="list-group-item px-0">
                 <div class="d-flex justify-content-between">
                   <span>{{ ex.exercise_type }}</span>
-                  <span class="text-muted small">{{ ex.duration_minutes }} min &middot; {{ ex.get_intensity_display }}</span>
+                  <span class="text-muted small">
+                    {{ ex.duration_minutes }} min
+                    {% if ex.calories_burned %}&middot; {{ ex.calories_burned }} kcal{% endif %}
+                  </span>
                 </div>
               </li>
             {% endfor %}
@@ -154,11 +210,51 @@
   </div>
 </div>
 
-<!-- AI Assistant CTA -->
+<!-- ── AI CTA ─────────────────────────────────────────────────────────── -->
 <div class="mt-4 p-4 bg-success bg-opacity-10 rounded-3 text-center">
   <i class="bi bi-robot fs-2 text-success"></i>
   <h5 class="mt-2 mb-1">Need wellness advice?</h5>
   <p class="text-muted small mb-3">Ask the AI assistant about your diet, exercise, and health goals.</p>
   <a href="{% url 'assistant:chat' %}" class="btn btn-success">Open AI Assistant</a>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if has_weight_data %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  const ctx = document.getElementById('weightChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: {{ weight_chart_labels|safe }},
+      datasets: [{
+        label: 'Weight (kg)',
+        data: {{ weight_chart_data|safe }},
+        borderColor: '#198754',
+        backgroundColor: 'rgba(25,135,84,0.08)',
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointBackgroundColor: '#198754',
+        tension: 0.3,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} kg` } }
+      },
+      scales: {
+        y: {
+          ticks: { callback: v => v + ' kg' },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+</script>
+{% endif %}
 {% endblock %}

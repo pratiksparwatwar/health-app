@@ -41,6 +41,7 @@ class ExerciseLog(models.Model):
     exercise_type = models.CharField(max_length=100, help_text='e.g. Running, Yoga, Cycling')
     duration_minutes = models.PositiveIntegerField()
     intensity = models.CharField(max_length=20, choices=INTENSITY_CHOICES, default='moderate')
+    calories_burned = models.PositiveIntegerField(null=True, blank=True)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

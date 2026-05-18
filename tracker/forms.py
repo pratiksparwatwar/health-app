@@ -16,7 +16,7 @@ class MealLogForm(forms.ModelForm):
 class ExerciseLogForm(forms.ModelForm):
     class Meta:
         model = ExerciseLog
-        fields = ['date', 'exercise_type', 'duration_minutes', 'intensity', 'notes']
+        fields = ['date', 'exercise_type', 'duration_minutes', 'intensity', 'calories_burned', 'notes']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
             'notes': forms.Textarea(attrs={'rows': 2}),

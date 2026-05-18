@@ -4,7 +4,8 @@
       "Bash(python3 -m venv venv)",
       "Bash(venv/bin/pip install *)",
       "Bash(DJANGO_SETTINGS_MODULE=config.settings venv/bin/python manage.py makemigrations)",
-      "Bash(DJANGO_SETTINGS_MODULE=config.settings venv/bin/python manage.py migrate)"
+      "Bash(DJANGO_SETTINGS_MODULE=config.settings venv/bin/python manage.py migrate)",
+      "Bash(DJANGO_SETTINGS_MODULE=config.settings venv/bin/python manage.py check)"
     ]
   }
 }
