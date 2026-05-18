@@ -4,6 +4,6 @@ openai==1.35.3          # DeepSeek uses the OpenAI-compatible API
 httpx==0.27.2           # Pin to avoid 'proxies' conflict with openai 1.35.x
 whitenoise==6.7.0       # Serves static files in production
 dj-database-url==2.2.0  # Parses DATABASE_URL for PostgreSQL on Render
-psycopg2-binary==2.9.9  # PostgreSQL driver (optional for local SQLite)
+psycopg2-binary==2.9.10 # PostgreSQL driver — 2.9.10 fixes Python 3.12 build issues
 gunicorn==22.0.0        # Production WSGI server
 Pillow==10.4.0          # Used to generate PWA icons
