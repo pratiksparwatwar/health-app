@@ -61,11 +61,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database — PostgreSQL in production, SQLite locally
+# Database — PostgreSQL in production (Neon/Render), SQLite locally
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     import dj_database_url
-    DATABASES = {'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)}
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require='neon.tech' in DATABASE_URL,  # SSL required for Neon
+        )
+    }
 else:
     DATABASES = {
         'default': {
