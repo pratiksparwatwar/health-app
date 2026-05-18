@@ -10,7 +10,11 @@
       "Bash(venv/bin/python -)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(python manage.py migrate accounts)",
+      "Bash(python3 manage.py migrate accounts)",
+      "Bash(find /home/insightzz -name \"activate\" -path \"*/venv/*\" 2>/dev/null | head -5)",
+      "Read(//home/insightzz/**)"
     ]
   }
 }
