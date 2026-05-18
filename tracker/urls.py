@@ -11,4 +11,5 @@ urlpatterns = [
     path('history/', views.history, name='history'),
     path('estimate-nutrition/', views.estimate_nutrition, name='estimate_nutrition'),
     path('estimate-exercise/', views.estimate_exercise_calories, name='estimate_exercise_calories'),
+    path('recommend-foods/', views.recommend_foods, name='recommend_foods'),
 ]

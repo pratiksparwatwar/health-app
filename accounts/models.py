@@ -23,12 +23,9 @@ class UserProfile(models.Model):
         ('health', 'General Health'),
     ]
     DIET_CHOICES = [
-        ('none', 'No Restriction'),
-        ('vegetarian', 'Vegetarian'),
-        ('vegan', 'Vegan'),
-        ('keto', 'Keto'),
-        ('paleo', 'Paleo'),
-        ('gluten_free', 'Gluten Free'),
+        ('veg', 'Vegetarian (No Egg)'),
+        ('veg_egg', 'Vegetarian + Egg'),
+        ('non_veg', 'Non-Vegetarian'),
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
@@ -38,7 +35,7 @@ class UserProfile(models.Model):
     height_cm = models.FloatField(null=True, blank=True, help_text='Height in centimeters')
     weight_kg = models.FloatField(null=True, blank=True, help_text='Starting weight in kg')
     goal = models.CharField(max_length=20, choices=GOAL_CHOICES, default='health')
-    dietary_preference = models.CharField(max_length=20, choices=DIET_CHOICES, default='none')
+    dietary_preference = models.CharField(max_length=20, choices=DIET_CHOICES, default='non_veg')
     medical_notes = models.TextField(blank=True, help_text='Optional: allergies, conditions, etc.')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

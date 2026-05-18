@@ -16,7 +16,7 @@ from .forms import MealLogForm, ExerciseLogForm, WeightLogForm, WaterLogForm
 
 def _calc_daily_goals(profile):
     """
-    Return (calorie_target, water_goal_ml) based on user profile using
+    Return (calorie_target, water_goal_ml, protein_target) based on user profile using
     the Mifflin-St Jeor BMR formula with a moderate activity multiplier.
     Falls back to sensible defaults when profile data is incomplete.
     """
@@ -47,7 +47,11 @@ def _calc_daily_goals(profile):
     else:
         water_goal_ml = 2500
 
-    return calorie_target, water_goal_ml
+    # Protein target: g per kg body weight varies by goal
+    protein_per_kg = {'muscle': 2.0, 'gain': 1.6, 'lose': 1.2}.get(goal, 0.8)
+    protein_target = round(weight * protein_per_kg) if weight else 50
+
+    return calorie_target, water_goal_ml, protein_target
 
 
 @login_required
@@ -78,10 +82,17 @@ def dashboard(request):
 
     # --- Goals ---
     profile = getattr(user, 'profile', None)
-    calorie_target, water_goal_ml = _calc_daily_goals(profile) if profile else (2000, 2500)
+    calorie_target, water_goal_ml, protein_target = _calc_daily_goals(profile) if profile else (2000, 2500, 50)
 
     calorie_pct = min(100, round(todays_calories / calorie_target * 100)) if calorie_target else 0
     water_pct   = min(100, round(todays_water_ml / water_goal_ml * 100)) if water_goal_ml else 0
+
+    # --- Protein ---
+    todays_protein    = todays_meals.aggregate(total=Sum('protein_grams'))['total'] or 0
+    todays_protein    = round(todays_protein, 1)
+    protein_pct       = min(100, round(todays_protein / protein_target * 100)) if protein_target else 0
+    remaining_protein = max(0, round(protein_target - todays_protein))
+    diet_pref         = getattr(profile, 'dietary_preference', 'non_veg') if profile else 'non_veg'
 
     # --- Weight chart (last 30 days) ---
     weight_logs = WeightLog.objects.filter(
@@ -110,6 +121,12 @@ def dashboard(request):
         'water_goal_liters': round(water_goal_ml / 1000, 1),
         'calorie_pct': calorie_pct,
         'water_pct': water_pct,
+        # Protein
+        'protein_target': protein_target,
+        'todays_protein': todays_protein,
+        'protein_pct': protein_pct,
+        'remaining_protein': remaining_protein,
+        'diet_pref': diet_pref,
         # Chart
         'weight_chart_labels': json.dumps(weight_chart_labels),
         'weight_chart_data': json.dumps(weight_chart_data),
@@ -305,5 +322,63 @@ def estimate_exercise_calories(request):
             'calories_burned': int(result.get('calories_burned', 0)),
             'note':            result.get('note', ''),
         })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def recommend_foods(request):
+    """Return AI food suggestions to meet the remaining protein quota for the day."""
+    try:
+        data = json.loads(request.body)
+        remaining_protein = float(data.get('remaining_protein', 0))
+    except (json.JSONDecodeError, KeyError, ValueError):
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    if not settings.DEEPSEEK_API_KEY:
+        return JsonResponse({'error': 'AI not configured'}, status=503)
+
+    profile = getattr(request.user, 'profile', None)
+    diet_pref = getattr(profile, 'dietary_preference', 'non_veg') if profile else 'non_veg'
+
+    diet_labels = {
+        'veg':     'strict vegetarian (no eggs, no meat, no fish — only plant-based foods like dal, paneer, tofu, nuts, beans)',
+        'veg_egg': 'vegetarian who eats eggs but no meat or fish',
+        'non_veg': 'non-vegetarian (can eat chicken, fish, eggs, meat, dairy, and plant-based foods)',
+    }
+    diet_desc = diet_labels.get(diet_pref, diet_labels['non_veg'])
+
+    try:
+        response = _deepseek_client().chat.completions.create(
+            model=settings.DEEPSEEK_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a nutrition expert. Suggest foods to help a person meet their daily protein target. "
+                        "Respond with ONLY a JSON array of exactly 5 options: "
+                        '[{"food": "<name>", "portion": "<serving size>", "protein_g": <number>, "calories": <number>}] '
+                        "Make the options varied and practical. No extra text, no markdown."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"I am {diet_desc}. I still need {remaining_protein:.0f}g more protein today. "
+                        "Suggest 5 easy foods I can eat now to get closer to my target."
+                    ),
+                },
+            ],
+            max_tokens=350,
+            temperature=0.4,
+        )
+        raw = response.choices[0].message.content.strip()
+        if raw.startswith('```'):
+            raw = raw.split('```')[1]
+            if raw.startswith('json'):
+                raw = raw[4:]
+        result = json.loads(raw.strip())
+        return JsonResponse({'recommendations': result})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)

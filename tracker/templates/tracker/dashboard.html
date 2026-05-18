@@ -56,6 +56,51 @@
       </div>
     </div>
   </div>
+
+  <!-- Protein goal -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="fw-semibold"><i class="bi bi-egg-fill text-warning me-1"></i>Protein</span>
+          <span class="small text-muted">{{ todays_protein }}g / {{ protein_target }}g</span>
+        </div>
+        <div class="progress mb-2" style="height:10px;">
+          <div class="progress-bar {% if protein_pct >= 100 %}bg-success{% elif protein_pct >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
+               style="width:{{ protein_pct }}%"></div>
+        </div>
+        {% if remaining_protein > 0 %}
+          <div class="small text-muted">
+            <i class="bi bi-arrow-right-circle text-warning"></i>
+            <strong>{{ remaining_protein }}g more protein needed</strong> &mdash;
+            <button class="btn btn-link btn-sm p-0 text-success fw-semibold" id="get-reco-btn"
+                    data-remaining="{{ remaining_protein }}" data-diet="{{ diet_pref }}">
+              What to eat?
+            </button>
+          </div>
+        {% else %}
+          <div class="small text-success fw-semibold"><i class="bi bi-check-circle-fill"></i> Daily protein goal met!</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── AI Food Recommendations ────────────────────────────────────────── -->
+<div id="reco-card" class="card border-0 shadow-sm mb-4 d-none">
+  <div class="card-header bg-white fw-bold border-0 pb-0">
+    <i class="bi bi-stars text-warning me-1"></i> AI Food Recommendations
+    <span class="badge bg-success-subtle text-success ms-2 small" id="reco-diet-badge"></span>
+  </div>
+  <div class="card-body">
+    <p class="text-muted small mb-3" id="reco-subtitle"></p>
+    <div id="reco-loading" class="text-center py-3 d-none">
+      <div class="spinner-border spinner-border-sm text-success" role="status"></div>
+      <span class="ms-2 text-muted small">Getting suggestions...</span>
+    </div>
+    <div id="reco-error" class="alert alert-warning small d-none"></div>
+    <div id="reco-list" class="row g-2"></div>
+  </div>
 </div>
 
 <!-- ── Today's Stats ─────────────────────────────────────────────────── -->
@@ -220,6 +265,83 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+(function () {
+  const btn = document.getElementById('get-reco-btn');
+  if (!btn) return;
+
+  const card      = document.getElementById('reco-card');
+  const loading   = document.getElementById('reco-loading');
+  const errorBox  = document.getElementById('reco-error');
+  const recoList  = document.getElementById('reco-list');
+  const badge     = document.getElementById('reco-diet-badge');
+  const subtitle  = document.getElementById('reco-subtitle');
+
+  const dietLabels = {
+    veg:     'Vegetarian (No Egg)',
+    veg_egg: 'Vegetarian + Egg',
+    non_veg: 'Non-Vegetarian',
+  };
+
+  btn.addEventListener('click', async () => {
+    const remaining = parseFloat(btn.dataset.remaining);
+    const diet      = btn.dataset.diet;
+
+    card.classList.remove('d-none');
+    loading.classList.remove('d-none');
+    errorBox.classList.add('d-none');
+    recoList.innerHTML = '';
+    badge.textContent  = dietLabels[diet] || diet;
+    subtitle.textContent = `Foods to help you get ${remaining}g more protein today:`;
+
+    // Scroll to card
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    try {
+      const res = await fetch('{% url "tracker:recommend_foods" %}', {
+        method:  'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken':  '{{ csrf_token }}',
+        },
+        body: JSON.stringify({ remaining_protein: remaining }),
+      });
+      const data = await res.json();
+      loading.classList.add('d-none');
+
+      if (data.error) {
+        errorBox.textContent = data.error;
+        errorBox.classList.remove('d-none');
+        return;
+      }
+
+      (data.recommendations || []).forEach(item => {
+        const col = document.createElement('div');
+        col.className = 'col-sm-6 col-lg-4';
+        col.innerHTML = `
+          <div class="border rounded-3 p-3 h-100 bg-white">
+            <div class="fw-semibold mb-1">${item.food}</div>
+            <div class="small text-muted mb-2">${item.portion}</div>
+            <div class="d-flex gap-3">
+              <span class="badge bg-warning-subtle text-warning-emphasis">
+                <i class="bi bi-egg-fill me-1"></i>${item.protein_g}g protein
+              </span>
+              <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                <i class="bi bi-fire me-1"></i>${item.calories} kcal
+              </span>
+            </div>
+          </div>`;
+        recoList.appendChild(col);
+      });
+    } catch (err) {
+      loading.classList.add('d-none');
+      errorBox.textContent = 'Failed to get recommendations. Please try again.';
+      errorBox.classList.remove('d-none');
+    }
+  });
+})();
+</script>
+
 {% if has_weight_data %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
