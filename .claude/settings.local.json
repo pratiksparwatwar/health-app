@@ -7,7 +7,10 @@
       "Bash(DJANGO_SETTINGS_MODULE=config.settings venv/bin/python manage.py migrate)",
       "Bash(DJANGO_SETTINGS_MODULE=config.settings venv/bin/python manage.py check)",
       "Bash(venv/bin/pip show *)",
-      "Bash(venv/bin/python -)"
+      "Bash(venv/bin/python -)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
