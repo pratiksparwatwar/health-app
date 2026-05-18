@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}History - Family Health Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="fw-bold mb-0">Weekly History</h2>
+  <small class="text-muted">{{ week_ago }} &rarr; {{ today }}</small>
+</div>
+
+<!-- Meals -->
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-header bg-warning bg-opacity-75 text-dark fw-bold">
+    <i class="bi bi-egg-fried me-1"></i> Meals ({{ meals.count }})
+  </div>
+  <div class="card-body p-0">
+    {% if meals %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th><th>Type</th><th>Food</th><th>Calories</th><th>Protein (g)</th><th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for meal in meals %}
+              <tr>
+                <td>{{ meal.date }}</td>
+                <td><span class="badge bg-success-subtle text-success">{{ meal.get_meal_type_display }}</span></td>
+                <td>{{ meal.food_description|truncatechars:50 }}</td>
+                <td>{{ meal.estimated_calories|default:"—" }}</td>
+                <td>{{ meal.protein_grams|default:"—" }}</td>
+                <td class="text-muted small">{{ meal.notes|truncatechars:40 }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted p-3 mb-0">No meals logged this week.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Exercise -->
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-header bg-primary bg-opacity-75 text-white fw-bold">
+    <i class="bi bi-bicycle me-1"></i> Exercise ({{ exercises.count }})
+  </div>
+  <div class="card-body p-0">
+    {% if exercises %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th><th>Type</th><th>Duration (min)</th><th>Intensity</th><th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ex in exercises %}
+              <tr>
+                <td>{{ ex.date }}</td>
+                <td>{{ ex.exercise_type }}</td>
+                <td>{{ ex.duration_minutes }}</td>
+                <td>
+                  <span class="badge bg-{{ ex.intensity|yesno:'danger,warning,info,secondary' }}-subtle">
+                    {{ ex.get_intensity_display }}
+                  </span>
+                </td>
+                <td class="text-muted small">{{ ex.notes|truncatechars:40 }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted p-3 mb-0">No exercise logged this week.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Weight & Water side by side -->
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-success bg-opacity-75 text-white fw-bold">
+        <i class="bi bi-speedometer2 me-1"></i> Weight Logs
+      </div>
+      <div class="card-body p-0">
+        {% if weights %}
+          <table class="table mb-0">
+            <thead class="table-light"><tr><th>Date</th><th>Weight (kg)</th><th>Notes</th></tr></thead>
+            <tbody>
+              {% for w in weights %}
+                <tr>
+                  <td>{{ w.date }}</td>
+                  <td>{{ w.weight_kg }}</td>
+                  <td class="text-muted small">{{ w.notes|truncatechars:30 }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="text-muted p-3 mb-0">No weight logs this week.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-info bg-opacity-75 text-white fw-bold">
+        <i class="bi bi-droplet-half me-1"></i> Water Intake
+      </div>
+      <div class="card-body p-0">
+        {% if water %}
+          <table class="table mb-0">
+            <thead class="table-light"><tr><th>Date</th><th>Amount (ml)</th></tr></thead>
+            <tbody>
+              {% for w in water %}
+                <tr><td>{{ w.date }}</td><td>{{ w.amount_ml }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="text-muted p-3 mb-0">No water logs this week.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

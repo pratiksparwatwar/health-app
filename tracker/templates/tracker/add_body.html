@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Log Weight & Water - Family Health Tracker{% endblock %}
+
+{% block content %}
+<div class="row g-4 justify-content-center">
+  <!-- Weight -->
+  <div class="col-lg-5">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-success text-white">
+        <h4 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Log Weight</h4>
+      </div>
+      <div class="card-body p-4">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% for field in weight_form %}
+            <div class="mb-3">
+              <label class="form-label fw-semibold">{{ field.label }}</label>
+              {{ field }}
+              {% for error in field.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+          <button type="submit" name="log_weight" class="btn btn-success fw-semibold w-100">Save Weight</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Water -->
+  <div class="col-lg-5">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-info text-white">
+        <h4 class="mb-0"><i class="bi bi-droplet-half me-2"></i>Log Water Intake</h4>
+      </div>
+      <div class="card-body p-4">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% for field in water_form %}
+            <div class="mb-3">
+              <label class="form-label fw-semibold">{{ field.label }}</label>
+              {{ field }}
+              {% if field.name == 'amount_ml' %}
+                <div class="form-text">e.g. 250 ml = 1 glass, 500 ml = 1 bottle</div>
+              {% endif %}
+              {% for error in field.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+          <button type="submit" name="log_water" class="btn btn-info text-white fw-semibold w-100">Save Water</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="text-center mt-3">
+  <a href="{% url 'tracker:dashboard' %}" class="btn btn-outline-secondary">Back to Dashboard</a>
+</div>
+
+<script>
+  document.querySelectorAll('input, select, textarea').forEach(el => el.classList.add('form-control'));
+</script>
+{% endblock %}

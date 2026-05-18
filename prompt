@@ -1,0 +1,70 @@
+Build a Django web app for a family diet and exercise tracker.
+
+Goal:
+A private family web app where each family member can log meals, exercise, body weight, water intake, and ask an AI assistant for general wellness suggestions.
+
+Tech stack:
+- Django
+- PostgreSQL preferred, SQLite acceptable for local dev
+- Bootstrap 5 UI
+- OpenAI API integration using the Responses API
+- Environment variables for secrets
+- Ready for deployment on Render/Railway
+
+Core requirements:
+1. User authentication
+   - Login/logout/register
+   - Each user belongs to a Family
+   - Each user has a profile: name, age, gender, height, weight, goal, dietary preference, medical notes optional
+
+2. Meal tracking
+   - Add meal log: date, meal type, food description, estimated calories, protein, notes
+   - List today’s meals
+   - Weekly meal history
+
+3. Exercise tracking
+   - Add exercise: date, type, duration, intensity, notes
+   - Weekly exercise summary
+
+4. Body tracking
+   - Weight log
+   - Water intake log
+   - Simple dashboard with today and weekly summary
+
+5. AI assistant
+   - Chat page
+   - User can ask diet/exercise questions
+   - Backend should fetch only that user’s recent 7 days meal/exercise/weight summary
+   - Send that summary to OpenAI
+   - AI must provide general wellness suggestions only, not medical diagnosis
+   - Add disclaimer in responses
+   - Store chat history
+
+6. Safety
+   - Do not expose OPENAI_API_KEY in frontend
+   - All OpenAI calls must happen from Django backend
+   - Users can only see their own logs
+   - Add basic validation
+
+7. Pages:
+   - Home dashboard
+   - Register/login
+   - Profile page
+   - Add meal
+   - Add exercise
+   - Add weight/water
+   - History page
+   - AI assistant chat page
+
+8. Deliverables:
+   - Complete Django project structure
+   - requirements.txt
+   - .env.example
+   - README.md with local setup steps
+   - Render deployment notes
+   - Clean Bootstrap UI
+   - Django admin enabled
+
+Use clean readable code with comments. Make this an MVP, not overcomplicated.
+
+Also I have deepseek API key

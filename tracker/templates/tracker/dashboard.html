@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Family Health Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="fw-bold mb-0">Good day, {{ user.first_name|default:user.username }}!</h2>
+    <small class="text-muted">{{ today|date:"l, F j, Y" }}</small>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'tracker:add_meal' %}" class="btn btn-outline-success btn-sm"><i class="bi bi-plus"></i> Meal</a>
+    <a href="{% url 'tracker:add_exercise' %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-plus"></i> Exercise</a>
+    <a href="{% url 'tracker:add_body' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-plus"></i> Weight/Water</a>
+  </div>
+</div>
+
+<!-- Today's Stats -->
+<h5 class="text-muted fw-semibold mb-3">TODAY</h5>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-fire fs-2 text-warning"></i>
+        <h3 class="fw-bold mb-0">{{ todays_calories }}</h3>
+        <small class="text-muted">kcal consumed</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-stopwatch fs-2 text-primary"></i>
+        <h3 class="fw-bold mb-0">{{ todays_exercise_mins }}</h3>
+        <small class="text-muted">min exercised</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-droplet-half fs-2 text-info"></i>
+        <h3 class="fw-bold mb-0">{{ todays_water_ml }}</h3>
+        <small class="text-muted">ml water</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-speedometer2 fs-2 text-success"></i>
+        <h3 class="fw-bold mb-0">{{ latest_weight.weight_kg|default:"—" }}</h3>
+        <small class="text-muted">latest weight (kg)</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Weekly Summary -->
+<h5 class="text-muted fw-semibold mb-3">LAST 7 DAYS</h5>
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-3">
+          <i class="bi bi-bar-chart-fill fs-2 text-warning"></i>
+          <div>
+            <div class="fw-bold fs-5">{{ weekly_calories }} kcal</div>
+            <div class="text-muted small">Total calories this week</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-3">
+          <i class="bi bi-activity fs-2 text-primary"></i>
+          <div>
+            <div class="fw-bold fs-5">{{ weekly_exercise_mins }} min</div>
+            <div class="text-muted small">Total exercise this week</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-3">
+          <i class="bi bi-cup-straw fs-2 text-info"></i>
+          <div>
+            <div class="fw-bold fs-5">{{ weekly_water_liters }} L</div>
+            <div class="text-muted small">Total water this week</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Today's Meals -->
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white fw-bold border-0 pb-0">
+        <i class="bi bi-egg-fried text-warning me-1"></i> Today's Meals
+      </div>
+      <div class="card-body">
+        {% if todays_meals %}
+          <ul class="list-group list-group-flush">
+            {% for meal in todays_meals %}
+              <li class="list-group-item px-0">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <span class="badge bg-success-subtle text-success me-1">{{ meal.get_meal_type_display }}</span>
+                    {{ meal.food_description|truncatechars:60 }}
+                  </div>
+                  <span class="text-muted small">{{ meal.estimated_calories|default:"?" }} kcal</span>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted mb-0">No meals logged today. <a href="{% url 'tracker:add_meal' %}">Add one</a></p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Today's Exercise -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white fw-bold border-0 pb-0">
+        <i class="bi bi-bicycle text-primary me-1"></i> Today's Exercise
+      </div>
+      <div class="card-body">
+        {% if todays_exercises %}
+          <ul class="list-group list-group-flush">
+            {% for ex in todays_exercises %}
+              <li class="list-group-item px-0">
+                <div class="d-flex justify-content-between">
+                  <span>{{ ex.exercise_type }}</span>
+                  <span class="text-muted small">{{ ex.duration_minutes }} min &middot; {{ ex.get_intensity_display }}</span>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted mb-0">No exercise logged today. <a href="{% url 'tracker:add_exercise' %}">Add one</a></p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Assistant CTA -->
+<div class="mt-4 p-4 bg-success bg-opacity-10 rounded-3 text-center">
+  <i class="bi bi-robot fs-2 text-success"></i>
+  <h5 class="mt-2 mb-1">Need wellness advice?</h5>
+  <p class="text-muted small mb-3">Ask the AI assistant about your diet, exercise, and health goals.</p>
+  <a href="{% url 'assistant:chat' %}" class="btn btn-success">Open AI Assistant</a>
+</div>
+{% endblock %}
