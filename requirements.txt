@@ -6,3 +6,4 @@ whitenoise==6.7.0       # Serves static files in production
 dj-database-url==2.2.0  # Parses DATABASE_URL for PostgreSQL on Render
 psycopg2-binary==2.9.9  # PostgreSQL driver (optional for local SQLite)
 gunicorn==22.0.0        # Production WSGI server
+Pillow==10.4.0          # Used to generate PWA icons

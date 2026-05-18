@@ -1,0 +1,39 @@
+{
+  "name": "Family Health Tracker",
+  "short_name": "Health",
+  "description": "Track family meals, exercise, weight and get AI wellness advice.",
+  "start_url": "/tracker/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#198754",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Log Meal",
+      "short_name": "Meal",
+      "url": "/tracker/meal/add/",
+      "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Log Exercise",
+      "short_name": "Exercise",
+      "url": "/tracker/exercise/add/",
+      "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
