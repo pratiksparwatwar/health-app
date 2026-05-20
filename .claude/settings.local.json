@@ -14,7 +14,8 @@
       "Bash(python manage.py migrate accounts)",
       "Bash(python3 manage.py migrate accounts)",
       "Bash(find /home/insightzz -name \"activate\" -path \"*/venv/*\" 2>/dev/null | head -5)",
-      "Read(//home/insightzz/**)"
+      "Read(//home/insightzz/**)",
+      "Bash(git -C /home/insightzz/insightzz/Project/Personal_assistant/health_app log --oneline)"
     ]
   }
 }
