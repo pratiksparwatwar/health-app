@@ -11,8 +11,9 @@ jobs:
     steps:
       - name: Ping app
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.APP_URL }}/ping/")
+          STATUS=$(curl --silent --show-error --location --max-time 30 --output /dev/null --write-out "%{http_code}" "${{ secrets.APP_URL }}/ping/")
           echo "Response: $STATUS"
           if [ "$STATUS" != "200" ]; then
-            echo "Warning: ping returned $STATUS"
+            echo "Ping failed: expected 200, got $STATUS"
+            exit 1
           fi
